@@ -3,6 +3,7 @@ const cors = require('cors');
 const app = express();
 const port = process.env.PORT || 5000;
 const { MongoClient, ServerApiVersion } = require('mongodb');
+const moment = require('moment');
 require('dotenv').config();
 
 
@@ -27,24 +28,41 @@ async function run() {
         // Connect the client to the server	(optional starting in v4.7)
         await client.connect();
 
+        // DB Collections
         const tasksCollection = client.db("ProgressNote").collection("tasks");
 
         app.get('/', (req, res) => {
             res.send('ProgressNote Server is in progress....')
         });
 
+        app.get('/allTasks', async (req, res) => {
+            const userEmail = req.query.email;
+            const query = { email: userEmail };
+
+            try {
+                const userTasks = await tasksCollection.find(query).toArray();
+                res.send(userTasks);
+            }
+            catch(error){
+                // res.send(error);
+            }
+        })
+
 
         app.post('/addTask', async (req, res) => {
             const task = req.body;
+            const date = moment().format('MMMM Do YYYY');
+            const time = moment().format('h:mm a');
 
-            console.log(task);
+            task.taskAddedDate = date;
+            task.taskAddedTime = time;
 
-            try{
-                // const result = await tasksCollection.insertOne(task);
-                // res.send(result);
+            try {
+                const result = await tasksCollection.insertOne(task);
+                res.send(result);
             }
-            catch(error){
-
+            catch (error) {
+                res.send(error);
             }
         })
 
